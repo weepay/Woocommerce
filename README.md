@@ -15,7 +15,7 @@ weepay woocomerce is the simple and lightweight implementation of [weepay.co](ht
 ## Installation
 * Backup your webstore and database
 * Download the source [Woocommerce Plugin](https://github.com/weepay/Woocommerce/releases/), just copy all the files in the zip to your wordpress wp-content/plugins  directory.
-* Click Extensions tab and extension tab in your wordpress admin panel.
+* Click plugin tab  in your wordpress admin panel.
 * Find weepay extension and install the module. Then click woocommerce settings payment subtab.
 * Get your api keys from weepay merchant [backend](https://www.pos.weepay.co/)
 * Select "Enabled" to activate weepay plugin for your weepay module.
