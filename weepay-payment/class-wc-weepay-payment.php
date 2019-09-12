@@ -27,7 +27,7 @@ function weepay_update_db_check() {
     global $wpdb;
     $installed_ver = get_option("weepay_db_version");
     if ($installed_ver != $weepay_db_version) {
-        moka_update();
+        weepay_update();
     }
 }
 
