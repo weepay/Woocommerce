@@ -114,3 +114,12 @@ msgstr "Kredi Kartı Formu"
 
 msgid "Payment ID"
 msgstr "Ödeme ID"
+
+msgid "Please check the form and try again."
+msgstr "Lütfen formu kontrol edip tekrar deneyin."
+
+msgid "Payment Error."
+msgstr "Ödeme Hatası."
+
+msgid "This controls the description which the user sees during checkout."
+msgstr "Kullanıcının ödeme sırasında gördüğü açıklama"

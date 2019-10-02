@@ -117,3 +117,9 @@ msgstr "Credit Cart Form"
 
 msgid "Payment ID"
 msgstr "Payment ID"
+
+msgid "This controls the description which the user sees during checkout."
+msgstr "This controls the description which the user sees during checkout."
+
+msgid "Payment Error."
+msgstr "Payment Error."
