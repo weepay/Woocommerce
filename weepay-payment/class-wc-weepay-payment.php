@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-error_reporting(E_ALL ^ E_NOTICE);
+error_reporting(0);
 
 global $weepay_db_version;
 $weepay_db_version = '1.0';
