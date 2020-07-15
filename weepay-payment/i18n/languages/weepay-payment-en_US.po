@@ -112,8 +112,8 @@ msgstr "weepay Checkout form"
 msgid "weepay Payment Module"
 msgstr "weepay Payment Module"
 
-msgid "Credit Cart Form"
-msgstr "Credit Cart Form"
+msgid "Credit Card Form"
+msgstr "Credit Card Form"
 
 msgid "Payment ID"
 msgstr "Payment ID"
