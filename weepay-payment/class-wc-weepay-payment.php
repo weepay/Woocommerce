@@ -269,7 +269,7 @@ function woocommerce_weepay_payment_init()
                 'currency' => $currency,
                 'paymentGroup' => 'PRODUCT',
                 'paymentSource' => 'WOOCOMMERCE|' . WOOCOMMERCE_VERSION . '|' . '1.0.1',
-                'Channel' => 'Module',
+                'channel' => 'Module',
             ),
                 'Customer' => [
                     'customerId' => $user_meta,
