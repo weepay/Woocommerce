@@ -4,7 +4,7 @@
  * Plugin Name:WooCommerce weepay Payment Gateway
  * Plugin URI: https://www.kahvedigital.com
  * Description: weepay Payment Gateway For Woocommerce
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: weepay.co
  * Author URI: http://weepay.co/
  * Domain Path: /i18n/languages/
@@ -14,10 +14,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-error_reporting(0);
+error_reporting(E_ALL ^ E_NOTICE);
 
 global $weepay_db_version;
-$weepay_db_version = '1.0';
+$weepay_db_version = '1.0.1';
 register_deactivation_hook(__FILE__, 'weepay_deactivation');
 register_activation_hook(__FILE__, 'weepay_activate');
 add_action('plugins_loaded', 'weepay_update_db_check');
@@ -28,7 +28,7 @@ function weepay_update_db_check()
     global $wpdb;
     $installed_ver = get_option("weepay_db_version");
     if ($installed_ver != $weepay_db_version) {
-        weepay_update();
+        moka_update();
     }
 }
 
@@ -42,7 +42,7 @@ function weepay_activate()
 {
     global $wpdb;
     global $weepay_db_version;
-    $weepay_db_version = '1.0';
+    $weepay_db_version = '1.0.1';
 
     $charset_collate = $wpdb->get_charset_collate();
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -190,10 +190,7 @@ function woocommerce_weepay_payment_init()
             $this->generate_settings_html();
             echo '</table>';
 
-            echo '<input name="save" class="button-primary woocommerce-save-button" type="submit" value="Kaydet"><hr/>';
-            include dirname(__FILE__) . '/includes/weepay-help-about.php';
         }
-
         private function setcookieSameSite($name, $value, $expire, $path, $domain, $secure, $httponly)
         {
 
@@ -215,7 +212,35 @@ function woocommerce_weepay_payment_init()
 
         function CreateCheckOutFormweePay($order_id)
         {
+            global $woocommerce;
+            if (version_compare(get_bloginfo('version'), '4.5', '>=')) {
+                wp_get_current_user();
+            } else {
+                get_currentuserinfo();
+            }
 
+            $order = new WC_Order($order_id);
+            $customerCart = $woocommerce->cart->get_cart();
+            $ProductsBasket = $this->generateBasketItems($customerCart, $order);
+
+            $ip = $_SERVER['REMOTE_ADDR'];
+            $siteLanguage = get_locale();
+            $user_meta = $order->get_user_id();
+            $siteLang = explode('_', get_locale());
+            $locale = ($siteLang[0] == "tr") ? "tr" : "en";
+            $phone = !empty($order->get_billing_phone()) ? $order->get_billing_phone() : 'NOT PROVIDED';
+            $email = !empty($order->get_billing_email()) ? $order->get_billing_email() : 'NOT PROVIDED';
+            $city_buyer = WC()->countries->states[$order->get_billing_country()][$order->get_billing_state()];
+
+            $city = !empty($city_buyer) ? $city_buyer : 'NOT PROVIDED';
+
+            $order_amount = $order->get_total();
+            $currency = $order->get_currency();
+
+            $city1 = isset(WC()->countries->states[$order->get_shipping_country()][$order->get_shipping_state()]) ? WC()->countries->states[$order->get_shipping_country()][$order->get_shipping_state()] : '';
+            $city2 = isset(WC()->countries->states[$order->get_shipping_state()]) ? WC()->countries->states[$order->get_shipping_state()] : '';
+            $countryShipping = isset(WC()->countries->countries[$order->get_shipping_country()]) ? WC()->countries->countries[$order->get_shipping_country()] : '';
+            $cityShipping = $city1 . $city2;
             $wooCommerceCookieKey = 'wp_woocommerce_session_';
             foreach ($_COOKIE as $name => $value) {
                 if (stripos($name, $wooCommerceCookieKey) === 0) {
@@ -225,60 +250,162 @@ function woocommerce_weepay_payment_init()
 
             $setCookie = $this->setcookieSameSite($wooCommerceCookieKey, $_COOKIE[$wooCommerceCookieKey], time() + 86400, "/", $_SERVER['SERVER_NAME'], true, true);
 
-            global $woocommerce;
-            if (version_compare(get_bloginfo('version'), '4.5', '>=')) {
-                wp_get_current_user();
-            } else {
-                get_currentuserinfo();
-            }
-
-            $order = new WC_Order($order_id);
-
-            $ip = $_SERVER['REMOTE_ADDR'];
-            $siteLanguage = get_locale();
-            $user_meta = get_user_meta(get_current_user_id());
-            $siteLang = explode('_', get_locale());
-            $locale = ($siteLang[0] == "tr") ? "tr" : "en";
-            $billing_full_name = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
-            $billing_full_name = !empty($billing_full_name) ? $billing_full_name : "NOT PROVIDED";
-            $phone = !empty($order->get_billing_phone()) ? $order->get_billing_phone() : 'NOT PROVIDED';
-            $email = !empty($order->get_billing_email()) ? $order->get_billing_email() : 'NOT PROVIDED';
-            $city_buyer = WC()->countries->states[$order->get_billing_country()][$order->get_billing_state()];
-
-            $city = !empty($city_buyer) ? $city_buyer : 'NOT PROVIDED';
-            $order_amount = $order->get_total();
-            $currency = $order->get_currency();
             if ($currency == 'TRY') {$currency = "TL";}
-            $endPointUrl = "https://api.weepay.co/Payment/PaymentCheckoutFormCreate/";
+            $endPointUrl = "https://api.weepay.co/Payment/PaymentCreate";
             $weepayArray = array();
-            $weepayArray['Aut'] = array(
-                'bayi-id' => $this->weepay_payment_bayi_id,
-                'api-key' => $this->weepay_payment_bayi_api,
-                'secret-key' => $this->weepay_payment_bayi_secret,
+            $weepayArray['Auth'] = array(
+                'bayiId' => $this->weepay_payment_bayi_id,
+                'apiKey' => $this->weepay_payment_bayi_api,
+                'secretKey' => $this->weepay_payment_bayi_secret,
             );
 
-            $weepayArray['Data'] = array(
-                'CallBackUrl' => $order->get_checkout_payment_url(true),
-                'Price' => round($order_amount, 2),
-                'Locale' => $locale,
-                'IpAddress' => $_SERVER['REMOTE_ADDR'],
-                'CustomerNameSurname' => $billing_full_name,
-                'CustomerPhone' => $phone,
-                'CustomerEmail' => $email,
-                'OutSourceID' => $order_id,
-                'Description' => $city,
-                'Currency' => $currency,
+            $weepayArrayData = array('Data' => array(
+                'callBackUrl' => add_query_arg('wc-api', 'WC_Gateway_Weepay', $order->get_checkout_order_received_url()),
+                'paidPrice' => round($order_amount, 2),
+                'locale' => $locale,
+                'ipAddress' => $_SERVER['REMOTE_ADDR'],
+                'orderId' => $order_id,
+                'description' => $order->get_customer_note(),
+                'currency' => $currency,
+                'paymentGroup' => 'PRODUCT',
+                'paymentSource' => 'WOOCOMMERCE|' . WOOCOMMERCE_VERSION . '|' . '1.0.1',
                 'Channel' => 'Module',
+            ),
+                'Customer' => [
+                    'customerId' => $user_meta,
+                    'customerName' => $order->get_billing_first_name(),
+                    'customerSurname' => $order->get_billing_last_name(),
+                    'gsmNumber' => $phone,
+                    'email' => $email,
+                    'identityNumber' => '11111111111',
+                    'city' => $city,
+                    'country' => WC()->countries->countries[$order->get_billing_country()],
+                ],
+                'BillingAddress' => [
+                    'contactName' => $order->get_billing_first_name() . $order->get_billing_last_name(),
+                    'address' => $order->get_billing_address_1(), $order->get_billing_address_2(),
+                    'city' => WC()->countries->states[$order->get_billing_country()][$order->get_billing_state()],
+                    'country' => WC()->countries->countries[$order->get_billing_country()],
+                    'zipCode' => $order->get_billing_postcode(),
+                ],
+                'ShippingAddress' => [
+                    'contactName' => $order->get_billing_first_name() . $order->get_billing_last_name(),
+                    'address' => $order->get_shipping_address_1(), $order->get_shipping_address_2(),
+                    'city' => $cityShipping,
+                    'country' => $countryShipping,
+                    'zipCode' => $order->get_shipping_postcode(),
+                ],
+                'Products' => $ProductsBasket,
+
             );
 
-            $endPointUrl = "https://api.weepay.co/Payment/PaymentCheckoutFormCreate/";
+            $resultArray = array_merge($weepayArray, $weepayArrayData);
+            $endPointUrl = "https://api.weepay.co/Payment/PaymentCreate";
 
-            $response = json_decode($this->curlPostExt(json_encode($weepayArray), $endPointUrl, true));
+            $response = json_decode($this->curlPostExt(json_encode($resultArray), $endPointUrl, true));
 
             return $response;
 
         }
 
+        public function generateBasketItems($items, $order)
+        {
+
+            $itemSize = count($items);
+
+            if (!$itemSize) {
+
+                return $this->calcProduct($order);
+            }
+
+            $keyNumber = 0;
+
+            foreach ($items as $key => $item) {
+
+                $productId = $item['product_id'];
+                $product = wc_get_product($productId);
+                $realPrice = $this->realPrice($item['line_subtotal'], $product->get_price());
+
+                if ($realPrice && $realPrice != '0' && $realPrice != '0.0' && $realPrice != '0.00' && $realPrice != false) {
+
+                    $basketItems[$keyNumber] = new stdClass();
+
+                    $basketItems[$keyNumber]->productId = $item['product_id'];
+                    $basketItems[$keyNumber]->productPrice = $this->priceParser(round($realPrice, 2));
+                    $basketItems[$keyNumber]->name = $product->get_title();
+                    $basketItems[$keyNumber]->itemType = 'PHYSICAL';
+
+                    $keyNumber++;
+
+                }
+
+            }
+
+            $shipping = $order->get_total_shipping() + $order->get_shipping_tax();
+
+            if ($shipping && $shipping != '0' && $shipping != '0.0' && $shipping != '0.00' && $shipping != false) {
+
+                $endKey = count($basketItems);
+
+                $basketItems[$endKey] = new stdClass();
+
+                $basketItems[$endKey]->productId = 11;
+                $basketItems[$endKey]->productPrice = $this->priceParser($shipping);
+                $basketItems[$endKey]->name = 'Cargo';
+                $basketItems[$endKey]->itemType = 'PHYSICAL';
+
+            }
+
+            return $basketItems;
+
+        }
+        public function realPrice($salePrice, $regularPrice)
+        {
+
+            if (empty($salePrice)) {
+
+                $salePrice = $regularPrice;
+            }
+
+            return $salePrice;
+
+        }
+        public function priceParser($price)
+        {
+
+            if (strpos($price, ".") === false) {
+                return $price . ".0";
+            }
+            $subStrIndex = 0;
+            $priceReversed = strrev($price);
+            for ($i = 0; $i < strlen($priceReversed); $i++) {
+                if (strcmp($priceReversed[$i], "0") == 0) {
+                    $subStrIndex = $i + 1;
+                } else if (strcmp($priceReversed[$i], ".") == 0) {
+                    $priceReversed = "0" . $priceReversed;
+                    break;
+                } else {
+                    break;
+                }
+            }
+
+            return strrev(substr($priceReversed, $subStrIndex));
+        }
+
+        public function calcProduct($order)
+        {
+
+            $keyNumber = 0;
+
+            $basketItems[$keyNumber] = new stdClass();
+
+            $basketItems[$keyNumber]->productId = $order->get_id();
+            $basketItems[$keyNumber]->productPrice = $this->priceParser(round($order->get_total(), 2));
+            $basketItems[$keyNumber]->name = 'Woocommerce - Custom Order Page';
+            $basketItems[$keyNumber]->itemType = 'PHYSICAL';
+
+            return $basketItems;
+        }
         function receipt_page($orderid)
         {
             global $woocommerce;
@@ -287,43 +414,12 @@ function woocommerce_weepay_payment_init()
             $status = $order->get_status();
             $showtotal = $order->get_total();
             $currency = $order->get_currency();
-            if ($_POST['isSuccessful'] == 'True') {
-
-                $Result = $this->GetOrderData($orderid);
-                $installment = $Result->Data->PaymentDetail->InstallmentNumber;
-                if ($installment > 1) {
-
-                    $installment_fee = $Result->Data->PaymentDetail->Amount - $showtotal;
-                    $order_fee = new stdClass();
-                    $order_fee->id = 'Installment Fee';
-                    $order_fee->name = __('Installment Fee', 'weepay-payment');
-                    $order_fee->amount = $installment_fee;
-                    $order_fee->taxable = false;
-                    $order_fee->tax = 0;
-                    $order_fee->tax_data = array();
-                    $order_fee->tax_class = '';
-                    $fee_id = $order->add_fee($order_fee);
-                    $order->calculate_totals(true);
-                    update_post_meta($order_id, 'weepay_installment_number', esc_sql($installment));
-                    update_post_meta($order_id, 'weepay_installment_fee', $installment_fee);
-                }
-                $order->payment_complete();
-                $order->add_order_note(__('Payment successful.', 'weepay-payment') . '<br/>' . __('Payment ID', 'weepay-payment') . ': ' . esc_sql($Result->Data->PaymentDetail->DealerPaymentId));
-                $woocommerce->cart->empty_cart();
-                wp_redirect($this->get_return_url());
-
-            } else if (isset($_POST['resultMessage'])) {
-
-                $order->update_status('pending', $_POST['resultMessage'], 'woocommerce');
-                $error_message = $_POST['resultMessage'];
-
-            }
-
             $installments_mode = $this->installments_mode;
             $form_class = $this->weepay_payment_bayi_form_type;
             $installments_mode = $this->installments_mode;
             $text_credit_card = __('Credit Cart Form', 'weepay-payment');
             $checkOutFormData = $this->CreateCheckOutFormweePay($orderid);
+
             if ($checkOutFormData->status == 'failure') {
 
                 $error_message = $checkOutFormData->message;
@@ -337,18 +433,86 @@ function woocommerce_weepay_payment_init()
 
         }
 
+        public function check_weepay_response()
+        {
+
+            global $woocommerce;
+
+            try {
+
+                if ($_POST['isSuccessful'] == 'True') {
+                    $orderId = $_POST['orderId'];
+                    $order = new WC_Order($_POST['orderId']);
+                    $Result = $this->GetOrderData($_POST['paymentId']);
+                    $installment = $Result->data->installement;
+                    if ($Result->paymentStatus == 'SUCCESS') {
+                        if ($installment > 1) {
+                            $order_amount = $order->get_total();
+                            $order_amount = round($order_amount, 2);
+                            $installment_fee = $Result->data->price - $order_amount;
+                            $order_fee = new stdClass();
+                            $order_fee->id = 'Installment Fee';
+                            $order_fee->name = __('Installment Fee', 'weepay-payment');
+                            $order_fee->amount = $installment_fee;
+                            $order_fee->taxable = false;
+                            $order_fee->tax = 0;
+                            $order_fee->tax_data = array();
+                            $order_fee->tax_class = '';
+                            $fee_id = $order->add_fee($order_fee);
+                            $order->calculate_totals(true);
+                            update_post_meta($order_id, 'weepay_installment_number', esc_sql($installment));
+                            update_post_meta($order_id, 'weepay_installment_fee', $installment_fee);
+                        }
+
+                        $orderMessage = 'Payment ID: ' . $_POST['paymentId'];
+                        $order->add_order_note($orderMessage, 0, true);
+                        $order->payment_complete();
+
+                        $woocommerce->cart->empty_cart();
+
+                        $checkoutOrderUrl = $order->get_checkout_order_received_url();
+
+                        $redirectUrl = add_query_arg(array('msg' => 'Thank You', 'type' => 'woocommerce-message'), $checkoutOrderUrl);
+                        return wp_redirect($redirectUrl);
+                    } else {
+
+                        $errorMessage = 'FAILURE';
+                        throw new \Exception($errorMessage);
+                    }
+                } else if (isset($_POST['message'])) {
+
+                    $errorMessage = isset($_POST['message']) ? $requestResponse->errorMessage : 'Failed';
+                    throw new \Exception($errorMessage);
+
+                }
+
+            } catch (\Exception $th) {
+                $message = $th->getMessage();
+                $message = $_POST['message'];
+                $message = !empty($message) ? $message : "Invalid Request";
+                $order = new WC_Order($_POST['orderId']);
+                // $order->update_status('failed');
+                $order->update_status('failed', sprintf(__('weepay payment failed', 'weepay-payment'), $message));
+                $order->add_order_note($message, 0, true);
+                wc_add_notice(__($message, 'weepay-payment'), 'error');
+                $redirectUrl = $woocommerce->cart->get_cart_url();
+                return wp_redirect($redirectUrl);
+            }
+
+        }
+
         function GetOrderData($id_order)
         {
             $weepayArray = array();
-            $weepayArray['Aut'] = array(
-                'bayi-id' => $this->weepay_payment_bayi_id,
-                'api-key' => $this->weepay_payment_bayi_api,
-                'secret-key' => $this->weepay_payment_bayi_secret,
+            $weepayArray['Auth'] = array(
+                'bayiId' => $this->weepay_payment_bayi_id,
+                'apiKey' => $this->weepay_payment_bayi_api,
+                'secretKey' => $this->weepay_payment_bayi_secret,
             );
             $weepayArray['Data'] = array(
-                'OrderID' => $id_order,
+                'paymentId' => $id_order,
             );
-            $weepayEndPoint = "https://api.weepay.co/Payment/GetPaymentDetail";
+            $weepayEndPoint = "https://api.weepay.co/GetPayment/Detail";
             return json_decode($this->curlPostExt(json_encode($weepayArray), $weepayEndPoint, true));
         }
 
