@@ -8,14 +8,13 @@
  * Author: weepay.co
  * Author URI: http://weepay.co/
  * Domain Path: /i18n/languages/
+ * WC requires at least: 3.0.0
+ * WC tested up to: 4.4.1
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
-
-error_reporting(E_ALL ^ E_NOTICE);
-
 global $weepay_db_version;
 $weepay_db_version = '1.0.1';
 register_deactivation_hook(__FILE__, 'weepay_deactivation');
@@ -439,11 +438,12 @@ function woocommerce_weepay_payment_init()
             global $woocommerce;
 
             try {
-
-                if ($_POST['isSuccessful'] == 'True') {
-                    $orderId = $_POST['orderId'];
-                    $order = new WC_Order($_POST['orderId']);
-                    $Result = $this->GetOrderData($_POST['paymentId']);
+                $paymentStatus = wc_clean($_POST['paymentStatus']);
+                if ($paymentStatus == true) {
+                    $orderId = wc_clean($_POST['orderId']);
+                    $order = new WC_Order($orderId);
+                    $paymentId = wc_clean($_POST['paymentId']);
+                    $Result = $this->GetOrderData($paymentId);
                     $installment = $Result->data->installement;
                     if ($Result->paymentStatus == 'SUCCESS') {
                         if ($installment > 1) {
@@ -464,7 +464,7 @@ function woocommerce_weepay_payment_init()
                             update_post_meta($order_id, 'weepay_installment_fee', $installment_fee);
                         }
 
-                        $orderMessage = 'Payment ID: ' . $_POST['paymentId'];
+                        $orderMessage = 'Payment ID: ' . $paymentId;
                         $order->add_order_note($orderMessage, 0, true);
                         $order->payment_complete();
 
@@ -480,18 +480,17 @@ function woocommerce_weepay_payment_init()
                         throw new \Exception($errorMessage);
                     }
                 } else if (isset($_POST['message'])) {
-
-                    $errorMessage = isset($_POST['message']) ? $requestResponse->errorMessage : 'Failed';
+                    $message = sanitize_text_field($_POST['message']);
+                    $errorMessage = isset($message) ? $requestResponse->errorMessage : 'Failed';
                     throw new \Exception($errorMessage);
 
                 }
 
             } catch (\Exception $th) {
                 $message = $th->getMessage();
-                $message = $_POST['message'];
+                $message = sanitize_text_field($_POST['message']);
                 $message = !empty($message) ? $message : "Invalid Request";
                 $order = new WC_Order($_POST['orderId']);
-                // $order->update_status('failed');
                 $order->update_status('failed', sprintf(__('weepay payment failed', 'weepay-payment'), $message));
                 $order->add_order_note($message, 0, true);
                 wc_add_notice(__($message, 'weepay-payment'), 'error');
