@@ -2,7 +2,6 @@
 
 /*
  * Plugin Name:WooCommerce weepay Payment Gateway
- * Plugin URI: https://weepay.co
  * Description: weepay Payment Gateway For Woocommerce
  * Version: 1.0.1
  * Author: weepay.co
