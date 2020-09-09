@@ -6,7 +6,7 @@
  * Description: weepay Payment Gateway For Woocommerce
  * Version: 1.0.1
  * Author: weepay.co
- * Author URI: http://weepay.co/
+ * Author URI: https://weepay.co/
  * Domain Path: /i18n/languages/
  * WC requires at least: 3.0.0
  * WC tested up to: 4.4.1
