@@ -2,6 +2,7 @@
 
 /*
  * Plugin Name:WooCommerce weepay Payment Gateway
+ * Plugin URI: https://www.kahvedigital.com
  * Description: weepay Payment Gateway For Woocommerce
  * Version: 1.0.1
  * Author: weepay.co
@@ -516,22 +517,15 @@ function woocommerce_weepay_payment_init()
 
         function curlPostExt($data, $url, $json = false)
         {
-            $ch = curl_init(); // initialize curl handle
-            curl_setopt($ch, CURLOPT_URL, $url); // set url to post to
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // return into a variable
-            if ($json) {
-                curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-type: application/json"));
-            }
+            $response = wp_remote_post($url, array(
+                'headers' => array('Content-Type' => 'application/json; charset=utf-8'),
+                'body' => $data,
+                'method' => 'POST',
+                'data_format' => 'body',
+            ));
+            $body = wp_remote_retrieve_body($response);
 
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // times out after 4s
-            curl_setopt($ch, CURLOPT_POST, 1); // set POST method
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data); // add POST fields
-            if ($result = curl_exec($ch)) { // run the whole process
-                curl_close($ch);
-                return $result;
-            }
+            return $body;
         }
         function process_payment($order_id)
         {
