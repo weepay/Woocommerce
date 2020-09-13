@@ -413,9 +413,8 @@ function woocommerce_weepay_payment_init()
             $status = $order->get_status();
             $showtotal = $order->get_total();
             $currency = $order->get_currency();
-            $installments_mode = $this->installments_mode;
+            // $installments_mode = $this->installments_mode;
             $form_class = $this->weepay_payment_bayi_form_type;
-            $installments_mode = $this->installments_mode;
             $text_credit_card = __('Credit Cart Form', 'weepay-payment');
             $checkOutFormData = $this->CreateCheckOutFormweePay($orderid);
 
