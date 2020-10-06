@@ -288,7 +288,7 @@ function woocommerce_weepay_payment_init()
                     'zipCode' => $order->get_billing_postcode(),
                 ],
                 'ShippingAddress' => [
-                    'contactName' => $order->get_billing_first_name() . $order->get_billing_last_name(),
+                    'contactName' => $order->get_shipping_first_name() . $order->get_shipping_last_name(),
                     'address' => $order->get_shipping_address_1(), $order->get_shipping_address_2(),
                     'city' => $cityShipping,
                     'country' => $countryShipping,
