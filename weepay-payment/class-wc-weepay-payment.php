@@ -332,7 +332,8 @@ function woocommerce_weepay_payment_init()
                     $basketItems[$keyNumber]->productId = $item['product_id'];
                     $basketItems[$keyNumber]->productPrice = $this->priceParser(round($realPrice, 2));
                     $basketItems[$keyNumber]->name = $product->get_title();
-                    $basketItems[$keyNumber]->itemType = 'PHYSICAL';
+                    $product->is_virtual() == true ? $pType = "VIRTUAL" : $pType = "PHYSICAL";
+                    $basketItems[$keyNumber]->itemType = $pType;
 
                     $keyNumber++;
 
