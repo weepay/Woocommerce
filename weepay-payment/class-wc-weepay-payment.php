@@ -257,7 +257,16 @@ function woocommerce_weepay_payment_init()
                 'apiKey' => $this->weepay_payment_bayi_api,
                 'secretKey' => $this->weepay_payment_bayi_secret,
             );
+            $shippingName = $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name();
+            $shippingAddress = $order->get_shipping_address_1() . ' ' . $order->get_shipping_address_2();
+            $shippingZip = $order->get_shipping_postcode();
 
+            $billingName = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
+            $billinAdress = $order->get_billing_address_1() . ' ' . $order->get_billing_address_2();
+            $billingCity = WC()->countries->states[$order->get_billing_country()][$order->get_billing_state()];
+            $billingCountry = WC()->countries->countries[$order->get_billing_country()];
+            $billingZip = $order->get_billing_postcode();
+            
             $weepayArrayData = array('Data' => array(
                 'callBackUrl' => add_query_arg('wc-api', 'WC_Gateway_Weepay', $order->get_checkout_order_received_url()),
                 'paidPrice' => round($order_amount, 2),
@@ -279,20 +288,21 @@ function woocommerce_weepay_payment_init()
                     'identityNumber' => '11111111111',
                     'city' => $city,
                     'country' => WC()->countries->countries[$order->get_billing_country()],
-                ],
+                ],                            
                 'BillingAddress' => [
-                    'contactName' => $order->get_billing_first_name() . $order->get_billing_last_name(),
-                    'address' => $order->get_billing_address_1(), $order->get_billing_address_2(),
-                    'city' => WC()->countries->states[$order->get_billing_country()][$order->get_billing_state()],
-                    'country' => WC()->countries->countries[$order->get_billing_country()],
-                    'zipCode' => $order->get_billing_postcode(),
+                    'contactName' => $billingName,
+                    'address' => $billinAdress,
+                    'city' =>$billingCity,
+                    'country' =>$billingCountry,
+                    'zipCode' =>  $billingZip,
                 ],
+                            
                 'ShippingAddress' => [
-                    'contactName' => $order->get_shipping_first_name() . $order->get_shipping_last_name(),
-                    'address' => $order->get_shipping_address_1(), $order->get_shipping_address_2(),
-                    'city' => $cityShipping,
-                    'country' => $countryShipping,
-                    'zipCode' => $order->get_shipping_postcode(),
+                    'contactName' =>  !empty($shippingName) ? $shippingName : $billingName,
+                    'address' => !empty($shippingAddress) ? $shippingAddress : $billinAdress,
+                    'city' =>!empty($cityShipping) ? $cityShipping : $billingCity,
+                    'country' =>!empty($countryShipping) ? $countryShipping : $billingCountry,
+                    'zipCode' => !empty($shippingZip) ? $shippingZip : $billingZip,
                 ],
                 'Products' => $ProductsBasket,
 
