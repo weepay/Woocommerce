@@ -476,7 +476,7 @@ function woocommerce_weepay_payment_init()
                         $orderMessage = 'Payment ID: ' . $paymentId;
                         $order->add_order_note($orderMessage, 0, true);
                         $order->payment_complete();
-
+                        WC()->cart->empty_cart();
                         $woocommerce->cart->empty_cart();
 
                         $checkoutOrderUrl = $order->get_checkout_order_received_url();
