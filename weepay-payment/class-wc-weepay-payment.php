@@ -287,7 +287,7 @@ function woocommerce_weepay_payment_init()
                     'email' => $email,
                     'identityNumber' => '11111111111',
                     'city' => $city,
-                    'country' => WC()->countries->countries[$order->get_billing_country()],
+                    'country' => $billingCountry,
                 ],                            
                 'BillingAddress' => [
                     'contactName' => $billingName,
