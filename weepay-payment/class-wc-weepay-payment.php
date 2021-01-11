@@ -264,6 +264,7 @@ function woocommerce_weepay_payment_init()
             $billingName = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
             $billinAdress = $order->get_billing_address_1() . ' ' . $order->get_billing_address_2();
             $billingCity = WC()->countries->states[$order->get_billing_country()][$order->get_billing_state()];
+            $billingCity = !empty($billingCity) ? $billingCity : 'NOT PROVIDED';
             $billingCountry = WC()->countries->countries[$order->get_billing_country()];
             $billingZip = $order->get_billing_postcode();
             
