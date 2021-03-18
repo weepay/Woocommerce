@@ -9,7 +9,7 @@
  * Author URI: https://weepay.co/
  * Domain Path: /i18n/languages/
  * WC requires at least: 3.0.0
- * WC tested up to: 4.4.1
+ * WC tested up to: 5.1.0
  */
 
 if (!defined('ABSPATH')) {
